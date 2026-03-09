@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import plotly.express as px
 
 def check_nulls(df: pd.DataFrame) -> str:
     """check for null values in each column"""
@@ -52,7 +53,7 @@ def fix_datatypes(df: pd.DataFrame) -> str:
         if df[column].dtype=='object':
             try:
                 df[column]=pd.to_numeric(df[column])
-                fixed_columns.appned(f"{column}: converted to numeric")
+                fixed_columns.append(f"{column}: converted to numeric")
             except:
                 pass
     if fixed_columns:
@@ -63,7 +64,7 @@ def fix_datatypes(df: pd.DataFrame) -> str:
 def detect_outliers(df: pd.DataFrame) -> str:
     """Detect outliers in numerical columns using IQR method"""
     outliers=[]
-    for column in df.columns:
+    for column in df.select_dtypes(include=['int64', 'float64']).columns:
         Q1=df[column].quantile(0.25)
         Q3=df[column].quantile(0.75)
         IQR=Q3-Q1
@@ -82,3 +83,51 @@ def get_summary(df: pd.DataFrame):
     summary.append(f"\nColumn Datatypes:\n{df.dtypes.to_string()}")
     summary.append(f"\nBasic Statistics: \n{df.describe().to_string()}")
     return "\n".join(summary)
+
+def plot_null_values(df: pd.DataFrame):
+    """Visualize null values across the dataframe"""
+    null_data=df.isnull().sum().reset_index()
+    null_data.columns=['column', 'null_count']
+
+    fig=px.bar(
+        null_data, x='column', y='null_count', title='Null values per column', labels={'column':'Column', 'null_count':'Null Count'}, color='null_count'
+    )
+    return fig
+
+def plot_distributions(df: pd.DataFrame):
+    """Visualize distribution of numerical columns"""
+    num_df=df.select_dtypes(include=['int64', 'float64'])
+    melted=num_df.melt(var_name='column', value_name='value')
+    fig=px.histogram(
+        melted, x='value', facet_col='column', title='Distributions'
+    )
+    return fig
+
+def plot_correlation_heatmap(df: pd.DataFrame):
+    """Heatmap of correlation between numerical columns"""
+    num_df=df.select_dtypes(include=['int64', 'float64'])
+    corr_matrix=num_df.corr()
+    fig=px.imshow(
+        corr_matrix, title='Correlation Heatmap', color_continuous_scale='RdBu', zmin=-1, zmax=1
+    )
+
+    return fig
+
+def plot_before_after(original_df: pd.DataFrame, cleaned_df: pd.DataFrame):
+    """Scatter plot to compare null values before and after cleaning"""
+    before=original_df.isnull().sum().reset_index()
+    before.columns=['column', 'null_count']
+    before['status']='before'
+
+    after=cleaned_df.isnull().sum().reset_index()
+    after.columns=['column', 'null_count']
+    after['status']='after'
+
+    combined=pd.concat([before, after])
+
+    fig=px.bar(
+        combined, x='column', y='null_count', color='status', barmode='group', title='Null Values Before vs After Cleaning'
+    )
+
+    return fig
+    
