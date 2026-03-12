@@ -1,12 +1,12 @@
 from agno.agent import Agent
 from agno.models.groq import Groq
 from tools import check_nulls, fill_null, fix_datatypes, check_duplicates, remove_duplicates, detect_outliers, get_summary
-
+import streamlit as st
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
-os.environ["GROQ_API_KEY"]=os.getenv("GROQ_API_KEY")
+os.environ["GROQ_API_KEY"]=os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", "")
 
 df=None
 
